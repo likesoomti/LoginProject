@@ -7,66 +7,65 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import com.soomti.loginproject.Model.User
+import io.realm.Realm
+import kotlinx.android.synthetic.main.activity_signup.*
+import java.lang.reflect.Member
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+import android.text.Editable
+import android.text.TextWatcher
+import android.R.id.edit
+
+
 
 class SignupActivity : AppCompatActivity() {
 
-    val email by lazy {
-        findViewById(R.id.email) as EditText
-    }
-    val password by lazy {
-        findViewById(R.id.password) as EditText
-    }
-    val password2 by lazy {
-        findViewById(R.id.passwordMore) as EditText
-    }
-    val createButton by lazy {
-        findViewById(R.id.createButton) as Button
-    }
-    // 이메일 정규표현식
-    fun emailCheck(email:String):Boolean {
-        //val regex = "/^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}\$/i;".toRegex()
-        //return !regex.containsMatchIn(email)
-
-        return !(email.contains("@"))
-    }
-    fun nullCheck(str:String) :Boolean {
-        return (str=="")
-    }
-    // 비밀번호 같은지 체크
-    fun passwordCheck(password1:String,password2:String):Boolean{
-        return !(password1 == password2)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_signup)
 
+        val check_email ="[0-9a-zA-Z]+(.[_a-z0-9-]+)*@(?:\\\\w+\\\\.)+\\\\w+\$";
+
+        val check_pwd = Pattern.compile("^(?=.*[0-9])(?=.*[a-z]).{8,16}$")
+
         var flag = true
 
-
         createButton.setOnClickListener{
-            var email = email.text.toString()
-            var password = password.text.toString()
-            var password2 = password2.text.toString()
-            //1. 이메일 정규표현식이 적합하지 않으면
-            if (emailCheck(email)) {
-                Toast.makeText(this,"이메일 표현이 맞지 않습니다.",Toast.LENGTH_LONG).show()
-                flag = false
+            Log.i("email",email.text.toString())
 
-            }else if (nullCheck(email) || nullCheck(password) || nullCheck(password2)) {
-                Toast.makeText(this,"공란이 있습니다.",Toast.LENGTH_LONG).show()
+            val isMatchPWD = check_pwd.matcher(password.text.toString())
+
+            if (!Pattern.matches(check_email,email.text.toString())) {
                 flag = false
-            }else if (passwordCheck(password,password2)) {
-                Toast.makeText(this,"비밀번호가 일치하지 않습니다.",Toast.LENGTH_LONG).show()
+                Toast.makeText(this,"이메일 정확히 지켜주세요",Toast.LENGTH_LONG).show();
+            }
+            if(identify.text.length < 5) {
                 flag = false
-            }else {
-                flag = true
+                Toast.makeText(this,"아이디 길이가 짧습니다.",Toast.LENGTH_LONG).show();
+            }
+            if(!isMatchPWD.find()) {
+                flag = false
+                Toast.makeText(this,"비밀번호 정확히 지켜주세요",Toast.LENGTH_LONG).show();
             }
 
             if(flag == true){
                 // 화면 넘기기
+
+                Realm.getDefaultInstance().use { realm ->
+                    realm.executeTransaction {
+                        val member = User()
+                        member.identify = identify.text.toString()
+                        member.email = email.text.toString()
+                        member.password = password.text.toString()
+
+                        realm.copyToRealm(member)
+                    }
+                }
                 val mainIntent = Intent(this, MainActivity::class.java)
                 startActivity(mainIntent)
+                finish()
             }
 
         }
